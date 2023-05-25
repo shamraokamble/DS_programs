@@ -1,0 +1,139 @@
+Assignment 5 Code
+Mutualserver.java
+
+import java.io.BufferedReader; import java.io.IOException;
+import java.io.InputStreamReader; import java.io.PrintWriter;
+import java.net.ServerSocket; import java.net.Socket;
+
+public class MutualServer {
+private ServerSocket serverSocket; private Socket client1Socket;
+private Socket client2Socket;
+private BufferedReader client1Reader; private PrintWriter client1Writer;
+private BufferedReader client2Reader; private PrintWriter client2Writer;
+
+public MutualServer(int port) { try {
+serverSocket = new ServerSocket(port);
+System.out.println("Server started and listening on port " + port);
+} catch (IOException e) { e.printStackTrace();
+}
+}
+
+public void acceptConnections() { try {
+// Accept client 1 connection
+client1Socket = serverSocket.accept();
+System.out.println("Client 1 connected: " + client1Socket.getInetAddress().getHostAddress());
+client1Reader = new BufferedReader(new InputStreamReader(client1Socket.getInputStream())); client1Writer = new PrintWriter(client1Socket.getOutputStream(), true);
+
+// Accept client 2 connection
+client2Socket = serverSocket.accept();
+System.out.println("Client 2 connected: " + client2Socket.getInetAddress().getHostAddress());
+client2Reader = new BufferedReader(new InputStreamReader(client2Socket.getInputStream())); client2Writer = new PrintWriter(client2Socket.getOutputStream(), true);
+
+// Start message exchange startMessageExchange();
+} catch (IOException e) { e.printStackTrace();
+}
+}
+
+public void startMessageExchange() { new Thread(() -> {
+ 
+try {
+while (true) {
+// Read message from client 1
+String messageFromClient1 = client1Reader.readLine(); if (messageFromClient1 != null) {
+System.out.println("Message received from Client 1: " + messageFromClient1);
+
+// Forward message to client 2
+client2Writer.println(messageFromClient1);
+}
+}
+} catch (IOException e) { e.printStackTrace();
+}
+}).start();
+
+try {
+while (true) {
+// Read message from client 2
+String messageFromClient2 = client2Reader.readLine(); if (messageFromClient2 != null) {
+System.out.println("Message received from Client 2: " + messageFromClient2);
+
+// Forward message to client 1
+client1Writer.println(messageFromClient2);
+}
+}
+} catch (IOException e) { e.printStackTrace();
+}
+}
+
+public static void main(String[] args) {
+MutualServer server = new MutualServer(8080); server.acceptConnections();
+}
+}
+
+
+Client.java
+
+import java.io.BufferedReader; import java.io.IOException;
+import java.io.InputStreamReader; import java.io.PrintWriter;
+import java.net.Socket;
+
+public class Client {
+private String serverAddress; private int serverPort;
+private BufferedReader reader; private PrintWriter writer;
+ 
+public Client(String serverAddress, int serverPort) { this.serverAddress = serverAddress;
+this.serverPort = serverPort;
+}
+
+public void connect() { try {
+Socket socket = new Socket(serverAddress, serverPort);
+System.out.println("Connected to server: " + socket.getInetAddress().getHostAddress()); reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+writer = new PrintWriter(socket.getOutputStream(), true);
+
+// Start sending and receiving messages startMessageExchange();
+} catch (IOException e) { e.printStackTrace();
+}
+}
+
+public void startMessageExchange() { new Thread(() -> {
+try {
+while (true) {
+// Read message from server
+String message = reader.readLine(); if (message != null) {
+System.out.println("Message received: " + message);
+}
+}
+} catch (IOException e) { e.printStackTrace();
+}
+}).start();
+
+try {
+BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in)); while (true) {
+// Read input from console
+String input = consoleReader.readLine(); if (input != null) {
+// Send message to server writer.println(input);
+}
+}
+} catch (IOException e) { e.printStackTrace();
+}
+}
+public static void main(String[] args) {
+Client client = new Client("localhost", 8080); client.connect();
+}
+}
+ 
+Output:
+MutualServer.java
+Server started and listening on port 8080 Client 1 connected: 127.0.0.1
+Client 2 connected: 127.0.0.1
+Message received from Client 1: Hello, Client 2 Message received from Client 2: Hello, Client 1
+
+Message received from Client 1: This is Token Ring Algorithm for client2 Message received from Client 2: Thankyou client1
+
+Client1
+Connected to server: 127.0.0.1 Hello, Client 2
+Message received: Hello, Client 1
+This is Token Ring Algorithm for client2 Message received: Thankyou client1
+
+Client2
+Connected to server: 127.0.0.1 Message received: Hello, Client 2 Hello, Client 1
+Message received: This is Token Ring Algorithm for client2 Thankyou client1
