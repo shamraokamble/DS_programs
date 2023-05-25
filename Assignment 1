@@ -1,0 +1,73 @@
+Assignment 1:
+Code
+Factorial.java
+import java.math.BigInteger;
+public interface Factorial extends java.rmi.Remote{
+
+
+public BigInteger factorial(int n) throws java.rmi.RemoteException;
+}
+
+
+FactorialClient.java
+import java.rmi.Naming;
+import java.net.MalformedURLException; import java.rmi.NotBoundException;
+import java.rmi.RemoteException; public class FactorialClient {
+public static void main(String[] args) { try {
+Factorial fact = (Factorial) Naming.lookup("rmi://localhost/FactorialService"); System.out.println(fact.factorial(30));
+} catch (MalformedURLException e) {
+System.out.println("Malformed URL: " + e);
+} catch (RemoteException e) {
+System.out.println("Remote Exception: " + e);
+} catch (NotBoundException e) {
+System.out.println("Not Bound Exception: " + e);
+}catch (ArithmeticException ae){
+System.out.println("Arithmetic Exception: "+ae);
+}
+}
+}
+
+
+FactorialImpl.java
+import java.math.BigInteger;
+import java.rmi.RemoteException;
+ 
+public class FactorialImpl extends java.rmi.server.UnicastRemoteObject implements Factorial{ protected FactorialImpl() throws RemoteException {
+super();
+}
+
+
+@Override
+public BigInteger factorial(int n) throws RemoteException { BigInteger fact = BigInteger.ONE;
+for (int i = 1; i <= n; i++) {
+fact = fact.multiply(BigInteger.valueOf(i));
+}
+return fact;
+}
+}
+
+
+FactorialServer.java
+import java.rmi.Naming;
+
+
+public class FactorialServer {
+
+
+public FactorialServer(){ try {
+Factorial factorial = new FactorialImpl();
+Naming.rebind("rmi://localhost/FactorialService", factorial);
+}catch (Exception e){
+System.out.println("Exception: "+e);
+}
+}
+public static void main(String[] args) { new FactorialServer();
+}
+}
+ 
+Output:
+PS C:\Users\ IdeaProjects\DS_Assignment1> cd src
+PS C:\Users\ IdeaProjects\DS_Assignment1\src> javac Factorial.java FactorialImpl.java FactorialClient.java FactorialServer.java
+PS C:\Users\IdeaProjects\DS_Assignment1\src> rmic FactorialImpl Warning: generation and use of skeletons and static stubs for JRMP is deprecated. Skeletons are unnecessary, and static stubs have
+been superseded by dynamically generated stubs. Users are
+encouraged to migrate away from using rmic to generate skeletons and static stubs. See the documentation for java.rmi.server.UnicastRemoteObject.
